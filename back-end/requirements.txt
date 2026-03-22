@@ -1,0 +1,7 @@
+streamlit
+PyPDF2
+python-docx
+openai
+gtts
+flask
+flask-cors
