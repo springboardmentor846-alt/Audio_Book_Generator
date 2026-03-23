@@ -1,0 +1,22 @@
+# Virtual environments
+venv/
+sadtalker_env/
+
+# Python cache
+__pycache__/
+*.pyc
+
+# Environment variables
+.env
+
+# Generated files
+audiobook.mp3
+*.mp4
+*.wav
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Ignore SadTalker repo
+SadTalker/
