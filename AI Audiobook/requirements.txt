@@ -1,0 +1,11 @@
+streamlit
+pypdf
+pdfplumber
+python-docx
+gTTS
+edge-tts
+google-genai
+groq
+python-dotenv
+pydub
+
