@@ -290,7 +290,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Home from "./pages/Home";
 import Upload from "./pages/Upload";
 import StudyMode from "./pages/StudyMode";
-import ListenerMode from "./pages/ListenerMode";
+
 import Insights from "./pages/Insights";
 import StudyInsights from "./pages/StudyInsights";
 
