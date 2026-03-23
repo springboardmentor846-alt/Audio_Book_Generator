@@ -43,7 +43,7 @@ export default function Home() {
           </p>
 
           <div className="flex gap-4 mt-8">
-            <Link to="/listen">
+            <Link to="/upload">
               <button className="bg-purple-600 px-6 py-3 rounded-xl hover:scale-105 transition">
                 🎧 Listen Mode
               </button>

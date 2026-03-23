@@ -303,7 +303,7 @@ export default function App() {
         <Route path="/" element={<Home />} />
         <Route path="/upload" element={<Upload />} />
         <Route path="/study" element={<StudyMode />} />
-        <Route path="/listen" element={<ListenerMode />} />
+       
         <Route path="/insights" element={<Insights />} />
         <Route path="/study-insights" element={<StudyInsights />} />
       </Routes>
