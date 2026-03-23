@@ -1,0 +1,80 @@
+# ========================
+
+# Node / React
+
+# ========================
+
+node_modules/
+dist/
+build/
+.vite/
+.next/
+
+# Logs
+
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# ========================
+
+# Python / Flask
+
+# ========================
+
+**pycache**/
+*.pyc
+*.pyo
+*.pyd
+*.db
+
+# Virtual env
+
+venv/
+.env/
+
+# ========================
+
+# Environment Variables
+
+# ========================
+
+.env
+
+# ========================
+
+# OS files
+
+# ========================
+
+.DS_Store
+Thumbs.db
+
+# ========================
+
+# Editor
+
+# ========================
+
+.vscode/
+.idea/
+
+# ========================
+
+# Generated files
+
+# ========================
+
+*.mp3
+*.wav
+*.pdf
+
+# ========================
+
+# Cache / temp
+
+# ========================
+
+.cache/
+temp/
+uploads/
