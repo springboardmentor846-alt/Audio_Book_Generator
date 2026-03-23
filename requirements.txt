@@ -1,0 +1,7 @@
+streamlit
+pypdf
+python-docx
+google-generativeai
+python-dotenv
+edge-tts
+gtts
