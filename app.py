@@ -8,7 +8,8 @@ from dotenv import load_dotenv
 from modules.extractor import extract_text, chunk_text
 from modules.llm_enrichment import enrich_text_standard, enrich_text_dramatized
 from modules.llm_auto import get_active_provider
-from modules.tts_converter import run_tts_standard, run_tts_dramatized, AVAILABLE_VOICES
+from modules.tts_converter import run_tts_standard, run_tts_dramatized, regenerate_and_remerge, AVAILABLE_VOICES
+from modules.qa_auditor import audit_segments, audit_single_file, QAIssue
 from modules.audio_delivery import (
     read_audio_bytes,
     cleanup_temp_segments,
@@ -22,6 +23,13 @@ TEMP_DIR = os.path.join(OUTPUT_DIR, "temp_segments")
 ensure_directory(OUTPUT_DIR)
 ensure_directory(TEMP_DIR)
 
+# ── Session state for QA persistence across reruns ────────────────────────────
+for _key in ("qa_ready", "qa_issues", "qa_mode", "qa_output_path",
+             "qa_narrator_voice", "qa_dramatized_script",
+             "qa_segment_paths", "qa_scene_texts", "qa_enriched_text",
+             "qa_use_ambience", "qa_ambience_volume_db"):
+    if _key not in st.session_state:
+        st.session_state[_key] = None
 
 st.set_page_config(
     page_title="AudioBook Generator",
@@ -116,6 +124,33 @@ with st.sidebar:
         ],
     )
 
+    if mode == "Dramatized":
+        st.divider()
+        st.subheader("🎵 Ambient Soundscapes")
+        use_ambience = st.toggle(
+            "Enable ambient soundscapes",
+            value=False,
+            help="Mixes procedurally generated emotion-matched ambient audio under each scene.",
+        )
+        ambience_volume_db = -22
+        if use_ambience:
+            ambience_volume_db = st.slider(
+                "Ambience volume (dBFS)",
+                min_value=-35,
+                max_value=-10,
+                value=-22,
+                step=1,
+                help="Lower value = quieter ambience. –22 dB is subtle; –12 dB is clearly audible.",
+            )
+            st.caption(
+                "🎼 Each scene gets a unique soundscape: "
+                "dark rumble for tense/sad, bright shimmer for excited/happy, "
+                "deep throb for mysterious."
+            )
+    else:
+        use_ambience = False
+        ambience_volume_db = -22
+
     st.divider()
 
     active = get_active_provider()
@@ -168,6 +203,20 @@ with right:
             </p>
         </div>
         """, unsafe_allow_html=True)
+
+        if use_ambience:
+            st.markdown("""
+            <div class="innovation-box">
+                <span class="badge">NEW FEATURE</span>
+                <h4>Ambient Soundscapes Active</h4>
+                <p>
+                    Each scene receives a procedurally generated ambient layer matched
+                    to its detected emotion — dark rumble for tense/fearful, bright shimmer
+                    for excited/happy, slow pulse for mysterious. Generated entirely offline
+                    using pink noise + FFT bandpass shaping.
+                </p>
+            </div>
+            """, unsafe_allow_html=True)
 
         with st.expander("Voice assignments in Dramatized Mode"):
             st.markdown("""
@@ -253,7 +302,8 @@ if can_generate:
             st.error(f"LLM enrichment failed: {e}")
             st.stop()
 
-        status.info("🔊 Step 3/3 — Converting to speech… (this may take 20–90 seconds)")
+        ambience_label = " + mixing ambient soundscapes" if (mode == "Dramatized" and use_ambience) else ""
+        status.info(f"🔊 Step 3/4 — Converting to speech{ambience_label}… (this may take 20–90 seconds)")
         progress.progress(65, text="Generating audio…")
 
         output_filename = f"audiobook_{int(time.time())}.mp3"
@@ -264,10 +314,47 @@ if can_generate:
                 run_tts_standard(enriched_text, output_path, selected_voice)
             else:
                 cleanup_temp_segments(TEMP_DIR)
-                run_tts_dramatized(dramatized_script, TEMP_DIR, output_path, selected_voice)
+                run_tts_dramatized(
+                    dramatized_script, TEMP_DIR, output_path, selected_voice,
+                    use_ambience=use_ambience,
+                    ambience_volume_db=float(ambience_volume_db),
+                )
         except Exception as e:
             st.error(f"TTS conversion failed: {e}")
             st.stop()
+
+        # ── Step 4: QA Audit ──────────────────────────────────────────────────
+        progress.progress(90, text="Running QA audit…")
+        status.info("🔍 Step 4/4 — Running auto QA audit on generated audio…")
+
+        try:
+            if mode == "Standard":
+                qa_issues = audit_single_file(output_path, enriched_text)
+            else:
+                scenes_list = dramatized_script.get("scenes", [])
+                scene_texts = [s.get("text", "").strip() for s in scenes_list]
+                seg_paths   = [
+                    os.path.join(TEMP_DIR, f"seg_{i:04d}.mp3")
+                    for i, t in enumerate(scene_texts) if t
+                ]
+                seg_texts   = [t for t in scene_texts if t]
+                qa_issues   = audit_segments(seg_paths, seg_texts)
+
+                # Store state needed for Fix button
+                st.session_state.qa_segment_paths   = seg_paths
+                st.session_state.qa_scene_texts     = seg_texts
+                st.session_state.qa_dramatized_script = dramatized_script
+
+            st.session_state.qa_issues            = qa_issues
+            st.session_state.qa_mode              = mode
+            st.session_state.qa_output_path       = output_path
+            st.session_state.qa_narrator_voice    = selected_voice
+            st.session_state.qa_enriched_text     = enriched_text if mode == "Standard" else None
+            st.session_state.qa_use_ambience      = use_ambience
+            st.session_state.qa_ambience_volume_db = float(ambience_volume_db)
+            st.session_state.qa_ready             = True
+        except Exception:
+            st.session_state.qa_ready = False  # QA failed silently; don't block delivery
 
         progress.progress(100, text="Done!")
         status.success("AudioBook generated successfully!")
@@ -293,6 +380,115 @@ if can_generate:
             use_container_width=True,
             type="primary",
         )
+# ── QA Report Section ─────────────────────────────────────────────────────────
+if st.session_state.qa_ready and st.session_state.qa_issues is not None:
+    st.divider()
+    qa_issues: list[QAIssue] = st.session_state.qa_issues
+    errors   = [i for i in qa_issues if i.severity == "error"]
+    warnings = [i for i in qa_issues if i.severity == "warning"]
+
+    st.subheader("🔍 Auto QA Report")
+
+    if not qa_issues:
+        st.success("✅ All segments passed QA checks — no issues detected.")
+    else:
+        col_e, col_w, col_t = st.columns(3)
+        col_e.metric("Errors",   len(errors),   delta=None)
+        col_w.metric("Warnings", len(warnings), delta=None)
+        col_t.metric("Total Segments Checked",
+                     len(st.session_state.qa_segment_paths or [1]))
+
+        _ISSUE_ICONS = {
+            "EMPTY":        ("🔴", "Generation failed — segment is empty or missing"),
+            "TRUNCATED":    ("🔴", "Audio cut off mid-sentence"),
+            "HALLUCINATED": ("🟡", "Audio longer than expected — possible LLM padding"),
+            "HIGH_SILENCE": ("🟡", "Excessive silence — possible TTS glitch"),
+        }
+
+        with st.expander(f"View {len(qa_issues)} issue(s)", expanded=True):
+            for issue in qa_issues:
+                icon, label = _ISSUE_ICONS.get(issue.issue_type, ("⚪", issue.issue_type))
+                seg_label = (
+                    f"Segment #{issue.segment_index}"
+                    if st.session_state.qa_mode == "Dramatized"
+                    else "Full audio file"
+                )
+                st.markdown(
+                    f"{icon} **{seg_label}** &nbsp;·&nbsp; `{issue.issue_type}` — {issue.details}",
+                    unsafe_allow_html=True,
+                )
+
+        # ── Fix buttons ───────────────────────────────────────────────────────
+        fixable = [i for i in qa_issues if i.severity == "error"]
+
+        if fixable and st.session_state.qa_mode == "Dramatized":
+            if st.button(
+                f"🔧 Fix {len(fixable)} Bad Segment(s) & Remerge",
+                type="primary",
+                use_container_width=True,
+            ):
+                bad_indices = [i.segment_index for i in fixable]
+                with st.spinner(f"Regenerating {len(bad_indices)} segment(s)…"):
+                    try:
+                        new_path = regenerate_and_remerge(
+                            bad_indices=bad_indices,
+                            script=st.session_state.qa_dramatized_script,
+                            temp_dir=TEMP_DIR,
+                            final_output=st.session_state.qa_output_path,
+                            narrator_voice=st.session_state.qa_narrator_voice,
+                            use_ambience=st.session_state.qa_use_ambience or False,
+                            ambience_volume_db=st.session_state.qa_ambience_volume_db or -22.0,
+                        )
+                        # Re-run QA on fixed segments
+                        re_issues = audit_segments(
+                            st.session_state.qa_segment_paths,
+                            st.session_state.qa_scene_texts,
+                        )
+                        st.session_state.qa_issues = re_issues
+                        st.success(f"Fixed! Remaining issues after re-audit: {len(re_issues)}")
+                        fixed_bytes = read_audio_bytes(new_path)
+                        st.audio(fixed_bytes, format="audio/mp3")
+                        st.download_button(
+                            "⬇️ Download Fixed AudioBook (.mp3)",
+                            data=fixed_bytes,
+                            file_name=os.path.basename(new_path),
+                            mime="audio/mpeg",
+                            use_container_width=True,
+                        )
+                    except Exception as e:
+                        st.error(f"Fix failed: {e}")
+
+        elif fixable and st.session_state.qa_mode == "Standard":
+            if st.button(
+                "🔧 Regenerate Full AudioBook",
+                type="primary",
+                use_container_width=True,
+            ):
+                with st.spinner("Regenerating…"):
+                    try:
+                        run_tts_standard(
+                            st.session_state.qa_enriched_text,
+                            st.session_state.qa_output_path,
+                            st.session_state.qa_narrator_voice,
+                        )
+                        re_issues = audit_single_file(
+                            st.session_state.qa_output_path,
+                            st.session_state.qa_enriched_text,
+                        )
+                        st.session_state.qa_issues = re_issues
+                        st.success(f"Regenerated! Remaining issues: {len(re_issues)}")
+                        fixed_bytes = read_audio_bytes(st.session_state.qa_output_path)
+                        st.audio(fixed_bytes, format="audio/mp3")
+                        st.download_button(
+                            "⬇️ Download Fixed AudioBook (.mp3)",
+                            data=fixed_bytes,
+                            file_name=os.path.basename(st.session_state.qa_output_path),
+                            mime="audio/mpeg",
+                            use_container_width=True,
+                        )
+                    except Exception as e:
+                        st.error(f"Regeneration failed: {e}")
+
 previous = list_previous_audiobooks(OUTPUT_DIR)
 if previous:
     st.divider()

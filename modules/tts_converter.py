@@ -102,21 +102,61 @@ def run_tts_dramatized(
     temp_dir: str,
     final_output: str,
     narrator_voice: str = "en-US-AriaNeural",
+    use_ambience: bool = False,
+    ambience_volume_db: float = -22.0,
 ) -> str:
     """
     Convert a dramatized script into a single MP3 file.
     narrator_voice controls which language/voice pool is used for all scenes.
+    If use_ambience is True, emotion-matched ambient audio is mixed under each segment.
     """
     audio_files = _run_async(_tts_dramatized(script, temp_dir, narrator_voice))
 
     if not audio_files:
         raise RuntimeError("No audio segments were generated.")
 
+    if use_ambience:
+        from modules.soundscape import mix_ambience_for_scenes
+        mix_ambience_for_scenes(audio_files, script.get("scenes", []), ambience_volume_db)
+
     if len(audio_files) == 1:
         shutil.copy(audio_files[0], final_output)
         return final_output
 
     return _merge_audio_files(audio_files, final_output)
+
+
+def regenerate_and_remerge(
+    bad_indices: list[int],
+    script: dict,
+    temp_dir: str,
+    final_output: str,
+    narrator_voice: str = "en-US-AriaNeural",
+    use_ambience: bool = False,
+    ambience_volume_db: float = -22.0,
+) -> str:
+    """
+    Re-generate only the bad segments (by scene index), then re-merge
+    all segments currently in temp_dir into a new final output file.
+    Ambience is re-applied to the regenerated segments if enabled.
+    """
+    regenerated = _run_async(_regenerate_segments(bad_indices, script, temp_dir, narrator_voice))
+
+    if use_ambience and regenerated:
+        from modules.soundscape import mix_ambience_for_scenes
+        mix_ambience_for_scenes(regenerated, script.get("scenes", []), ambience_volume_db)
+
+    all_segments = sorted([
+        os.path.join(temp_dir, f)
+        for f in os.listdir(temp_dir)
+        if f.startswith("seg_") and f.endswith(".mp3")
+    ])
+    if not all_segments:
+        raise RuntimeError("No segments found in temp_dir after regeneration.")
+    if len(all_segments) == 1:
+        shutil.copy(all_segments[0], final_output)
+        return final_output
+    return _merge_audio_files(all_segments, final_output)
 
 
 # ---------------------------------------------------------------------------
@@ -262,6 +302,52 @@ def _merge_audio_files(audio_files: list[str], output_path: str) -> str:
                 except Exception:
                     continue
         return output_path
+
+
+async def _regenerate_segments(
+    bad_indices: list[int],
+    script: dict,
+    temp_dir: str,
+    narrator_voice: str,
+) -> list[str]:
+    """Re-run TTS for specific scene indices, overwriting their segment files."""
+    import edge_tts
+
+    lang        = narrator_voice.split("-")[0].lower()
+    char_pool   = _LANG_CHARACTER_VOICES.get(lang, _LANG_CHARACTER_VOICES["en"])
+    scenes      = script.get("scenes", [])
+    char_voices = _assign_character_voices(scenes, char_pool, narrator_voice)
+
+    tasks, paths = [], []
+    for i in bad_indices:
+        if i >= len(scenes):
+            continue
+        scene = scenes[i]
+        text  = scene.get("text", "").strip()
+        if not text:
+            continue
+
+        character = scene.get("character", "NARRATOR")
+        emotion   = scene.get("emotion", "neutral").lower()
+        if emotion not in _VALID_EMOTIONS:
+            emotion = "neutral"
+
+        default_rate, default_pitch = _EMOTION_PROSODY[emotion]
+        rate  = _sanitize_rate(scene.get("rate",  default_rate),  default_rate)
+        pitch = _sanitize_pitch(scene.get("pitch", default_pitch), default_pitch)
+        voice = narrator_voice if character == "NARRATOR" else char_voices.get(character, narrator_voice)
+
+        seg_path = os.path.join(temp_dir, f"seg_{i:04d}.mp3")
+        paths.append(seg_path)
+        communicate = edge_tts.Communicate(text, voice, rate=rate, pitch=pitch)
+        tasks.append(communicate.save(seg_path))
+
+    results = await asyncio.gather(*tasks, return_exceptions=True)
+    for idx, result in enumerate(results):
+        if isinstance(result, Exception):
+            print(f"[TTS] Regen of segment {bad_indices[idx]} failed: {result}")
+
+    return [p for p in paths if os.path.exists(p)]
 
 
 def _run_async(coro):
