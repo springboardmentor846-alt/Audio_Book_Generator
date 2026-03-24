@@ -7,9 +7,9 @@ Transform any PDF, DOCX, or TXT document into a high-quality audiobook using AI-
 ## ✨ Features
 
 - **Standard Mode** — Single narrator rewrites your document into engaging audiobook prose
-- **Dramatized Mode** *(Innovative Feature)* — AI detects characters, dialogue, and emotional tone per scene. Each character is assigned a unique neural voice with emotion-aware speaking rate and pitch — turning any document into a fully cast audio drama
-- **Ambient Soundscapes** *(New)* — Procedurally generated, emotion-matched ambient audio mixed under each scene. Dark rumble for tense/fearful, bright shimmer for excited/happy, slow pulse for mysterious — entirely offline, no sample files needed
-- **Auto QA Auditor** *(New)* — Automatically detects problems in every generated segment (empty files, truncated audio, excessive silence, over-long segments) and offers one-click regeneration of bad segments
+- **Dramatized Mode**  — AI detects characters, dialogue, and emotional tone per scene. Each character is assigned a unique neural voice with emotion-aware speaking rate and pitch — turning any document into a fully cast audio drama
+- **Ambient Soundscapes**  — Procedurally generated, emotion-matched ambient audio mixed under each scene. Dark rumble for tense/fearful, bright shimmer for excited/happy, slow pulse for mysterious — entirely offline, no sample files needed
+- **Auto QA Auditor**  — Automatically detects problems in every generated segment (empty files, truncated audio, excessive silence, over-long segments) and offers one-click regeneration of bad segments
 - **Multi-language support** — English, Hindi, Tamil, Telugu, Bengali, Malayalam, Marathi, Kannada, Gujarati, and Urdu voices
 - **Auto LLM switching** — Automatically selects the best available AI provider (Gemini → Groq → OpenAI) from your `.env` — no manual selection needed
 - **No ffmpeg required** — Audio merging works without any system dependencies
