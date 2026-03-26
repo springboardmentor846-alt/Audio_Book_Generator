@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Interactive AI Audiobook Generator</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css"/>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}"/>
+</head>
+<body>
+
+<div class="page-wrapper">
+
+  <!-- header -->
+  <div class="site-header">
+    <br>
+    <h1 class="site-title">
+      <i class="bi bi-headphones title-icon"></i>
+      Interactive AI Audiobook Generator
+      
+    </h1>
+    <br><br>
+
+  <!--UPLOAD-->
+  <div class="main-card">
+    <div class="row g-0">
+
+      <!-- Left:Upload-->
+      <div class="col-md-6 upload-col">
+        <p class="col-label">Upload Content</p>
+
+        <div class="dropzone" id="dropzone"
+             ondragover="handleDragOver(event)"
+             ondragleave="handleDragLeave(event)"
+             ondrop="handleDrop(event)"
+             onclick="document.getElementById('fileInput').click()">
+          <input type="file" id="fileInput" accept=".pdf,.txt,.docx,.doc"
+                 hidden onchange="handleFileSelect(event)"/>
+          <i class="bi bi-file-earmark dz-fi"></i>
+          <span class="dz-label">Browse files</span>
+        </div>
+
+        <p class="dz-sub">Drag and drop file here</p>
+        <p class="dz-fmt">PDF, DOCX, TXT</p>
+
+        <div class="file-selected d-none" id="fileSelected">
+          <i class="bi bi-file-earmark-check-fill" style="color:#22c55e;font-size:14px;"></i>
+          <span id="selectedName"></span>
+          <button onclick="clearFile(event)"><i class="bi bi-x"></i></button>
+        </div>
+      </div>
+
+      <!-- Right: Language + Generate -->
+      <div class="col-md-6 lang-col">
+        <p class="col-label">Select Audiobook Language</p>
+        <select class="lang-select" id="languageSelect">
+          <option value="English">English</option>
+          <option value="Spanish">Spanish</option>
+          <option value="French">French</option>
+          <option value="German">German</option>
+          <option value="Hindi">Hindi</option>
+          <option value="Portuguese">Portuguese</option>
+          <option value="Arabic">Arabic</option>
+          <option value="Japanese">Japanese</option>
+          <option value="Chinese">Chinese</option>
+          <option value="Italian">Italian</option>
+        </select>
+
+        <!-- Generate button -->
+        <button class="btn-generate" id="generateBtn" onclick="generateAudiobook()">
+          Generate Audiobook
+        </button>
+      </div>
+    </div>
+
+    <div class="gen-prog d-none" id="genProg">
+      <div class="gen-prog-label" id="genProgLabel">Processing…</div>
+      <div class="progress" style="height:4px;border-radius:4px;">
+        <div class="progress-bar" id="genProgBar"
+             style="width:0%;background:#1a6fd4;transition:width .4s;border-radius:4px;"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TABS CARD-->
+  <div class="tabs-card">
+
+    <!--navigation -->
+    <ul class="nav nav-tabs am-tabs" id="mainTabs">
+      <li class="nav-item">
+        <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#pAudiobook">
+          <i class="bi bi-headphones tab-ico text-primary"></i> Audiobook
+        </button>
+      </li>
+      <li class="nav-item">
+        <button class="nav-link" data-bs-toggle="tab" data-bs-target="#pSummary" onclick="loadSummary()">
+          <i class="bi bi-file-text tab-ico"></i> Summary
+        </button>
+      </li>
+      <li class="nav-item">
+        <button class="nav-link" data-bs-toggle="tab" data-bs-target="#pQuiz" onclick="loadQuiz()">
+          <i class="bi bi-book tab-ico text-danger"></i> Quiz
+        </button>
+      </li>
+      <li class="nav-item">
+        <button class="nav-link" data-bs-toggle="tab" data-bs-target="#pBookmarks">
+          <i class="bi bi-bookmark tab-ico text-warning"></i> Bookmarks
+        </button>
+      </li>
+      <li class="nav-item">
+        <button class="nav-link" data-bs-toggle="tab" data-bs-target="#pQA">
+          <i class="bi bi-chat-dots tab-ico" style="color:#0ea5e9;"></i> Q&amp;A
+        </button>
+      </li>
+      <li class="nav-item">
+        <button class="nav-link" data-bs-toggle="tab" data-bs-target="#pEval" onclick="loadEvaluation()">
+          <i class="bi bi-bar-chart-line tab-ico text-warning"></i> Evaluation
+        </button>
+      </li>
+    </ul>
+
+    <div class="tab-content am-tab-content">
+
+      <!--AUDIOBOOK-->
+      <div class="tab-pane fade show active" id="pAudiobook">
+
+        <div class="empty-state" id="abEmpty">
+          <i class="bi bi-headphones empty-ico"></i>
+          <p>Upload a file and click <strong>Generate Audiobook</strong> to begin.</p>
+        </div>
+
+        <!-- Player (shown after generation) -->
+        <div id="abPlayer" class="d-none">
+
+          <h6 class="player-heading">Audiobook Player</h6>
+
+          <div class="player-bar" id="playerBar">
+            <button class="pb-play" id="playBtn" onclick="togglePlay()">
+              <i class="bi bi-play-fill" id="playIcon"></i>
+            </button>
+            <span class="pb-time" id="curTime">00:02</span>
+            <span class="pb-sep">/</span>
+            <span class="pb-time" id="totTime">03:45</span>
+            <div class="pb-track-wrap">
+              <div class="pb-track" id="pbTrack" onclick="seekAudio(event)">
+                <div class="pb-filled" id="pbFilled"></div>
+                <div class="pb-thumb" id="pbThumb"></div>
+              </div>
+            </div>
+            <button class="pb-ctrl" onclick="toggleMute()" title="Volume">
+              <i class="bi bi-volume-up-fill" id="volIcon"></i>
+            </button>
+            <button class="pb-ctrl" title="Settings">
+              <i class="bi bi-gear-fill"></i>
+            </button>
+            <button class="pb-ctrl" title="More">
+              <i class="bi bi-three-dots-vertical"></i>
+            </button>
+          </div>
+
+          <!-- Script display -->
+          <div class="script-block" id="scriptBlock">
+            <div class="script-block-hdr">
+              <span>Generated Script</span>
+              <button class="bm-add-btn" onclick="addBookmark()">
+                <i class="bi bi-bookmark-plus me-1"></i>Bookmark
+              </button>
+            </div>
+            <div class="script-text" id="scriptText"></div>
+          </div>
+
+          <!-- Download Audiobook button-->
+          <div class="ab-btns">
+            <button class="btn-download-ab" onclick="downloadScript()">
+              <i class="bi bi-download me-2"></i>Download Audiobook
+            </button>
+            <button class="btn-copy-ab" onclick="copyScript()">
+              <i class="bi bi-clipboard me-1"></i>Copy Script
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── SUMMARY ── -->
+      <div class="tab-pane fade" id="pSummary">
+        <div class="empty-state" id="sumEmpty">
+          <i class="bi bi-file-text empty-ico"></i>
+          <p>Generate an audiobook first to view its summary.</p>
+        </div>
+        <div id="sumContent" class="d-none">
+          <div class="tab-bar">
+            <span class="tab-bar-title">Content Summary</span>
+            <button class="tab-bar-btn" onclick="loadSummary(true)">
+              <i class="bi bi-arrow-clockwise me-1"></i>Refresh
+            </button>
+          </div>
+          <div class="prose-area" id="sumBody"><div class="shimmer"></div></div>
+        </div>
+      </div>
+
+      <!-- QUIZ-->
+      <div class="tab-pane fade" id="pQuiz">
+        <div class="empty-state" id="quizEmpty">
+          <i class="bi bi-patch-question empty-ico"></i>
+          <p>Generate an audiobook first, then test your understanding.</p>
+        </div>
+        <div id="quizContent" class="d-none">
+          <div class="tab-bar">
+            <span class="tab-bar-title">Comprehension Quiz</span>
+            <button class="tab-bar-btn" onclick="loadQuiz(true)">
+              <i class="bi bi-arrow-clockwise me-1"></i>New Quiz
+            </button>
+          </div>
+          <div id="quizBody"></div>
+          <div id="quizScore" class="quiz-score d-none"></div>
+        </div>
+      </div>
+
+      <!-- ── BOOKMARKS ── -->
+      <div class="tab-pane fade" id="pBookmarks">
+        <div class="tab-bar">
+          <span class="tab-bar-title">Saved Bookmarks</span>
+          <button class="tab-bar-btn text-danger" onclick="clearBookmarks()">
+            <i class="bi bi-trash3 me-1"></i>Clear All
+          </button>
+        </div>
+        <div id="bkList"></div>
+      </div>
+
+      <!-- Q&A-->
+      <div class="tab-pane fade" id="pQA">
+        <div class="empty-state" id="qaEmpty">
+          <i class="bi bi-chat-dots empty-ico"></i>
+          <p>Generate an audiobook first, then ask questions about it.</p>
+        </div>
+        <div id="qaContent" class="d-none">
+          <div class="tab-bar">
+            <span class="tab-bar-title">Ask a Question</span>
+          </div>
+          <div class="qa-chat" id="qaChat"></div>
+          <div class="qa-row">
+            <input class="qa-input" id="qaInput" type="text"
+                   placeholder="Ask something about the content…"
+                   onkeydown="if(event.key==='Enter') askQuestion()"/>
+            <button class="qa-send" onclick="askQuestion()">
+              <i class="bi bi-send-fill"></i>
+            </button>
+          </div>
+          <div class="qa-chips">
+            <button onclick="quickAsk('What is the main topic?')">Main topic?</button>
+            <button onclick="quickAsk('What are the key takeaways?')">Key takeaways?</button>
+            <button onclick="quickAsk('Summarize the important points.')">Important points?</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- EVALUATION  -->
+      <div class="tab-pane fade" id="pEval">
+        <div class="empty-state" id="evalEmpty">
+          <i class="bi bi-bar-chart-line empty-ico"></i>
+          <p>Generate an audiobook first to see evaluation metrics.</p>
+        </div>
+        <div id="evalContent" class="d-none">
+          <div class="tab-bar">
+            <span class="tab-bar-title">Content Evaluation</span>
+            <button class="tab-bar-btn" onclick="loadEvaluation(true)">
+              <i class="bi bi-arrow-clockwise me-1"></i>Refresh
+            </button>
+          </div>
+          <div id="evalBody"></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+</div>
+
+<!-- Toast -->
+<div class="am-toast d-none" id="amToast">
+  <i class="bi" id="toastIcon"></i>
+  <span id="toastMsg"></span>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>
