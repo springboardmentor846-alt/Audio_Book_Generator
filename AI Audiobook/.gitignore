@@ -1,0 +1,57 @@
+# Project root .gitignore (next to app.py). Do not confuse with venv/.gitignore inside venv/.
+
+# Environment and API keys (never commit)
+.env
+.env.local
+.env.*.local
+
+# Streamlit secrets (API keys, tokens)
+.streamlit/secrets.toml
+
+# Virtual environment
+venv/
+.venv/
+env/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+sdist/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Testing / tooling
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Streamlit
+.streamlit/cache/
+
+# Logs and local scratch
+*.log
+
+# OS / editor
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+.idea/
+
+# Optional: local credentials / keys on disk
+*.pem
+id_rsa
+*.key
