@@ -1,4 +1,4 @@
-# Project root .gitignore (next to app.py). Do not confuse with venv/.gitignore inside venv/.
+# Project root .gitignore (next to app.py).
 
 # Environment and API keys (never commit)
 .env
