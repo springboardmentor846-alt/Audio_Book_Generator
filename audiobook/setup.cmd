@@ -3,7 +3,7 @@ echo Setting up AudioBook Generator...
 echo.
 
 REM Set OpenRouter API key
-set OPENROUTER_API_KEY=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
+set OPENROUTER_API_KEY=your_api_key_here
 
 echo Installing dependencies...
 pip install -r requirements.txt
