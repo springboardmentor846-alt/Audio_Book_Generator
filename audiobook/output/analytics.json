@@ -1,0 +1,52 @@
+[
+  {
+    "timestamp": "2026-03-27T19:28:26.222187",
+    "files": [
+      "Sample_Abstract.docx"
+    ],
+    "char_count": 4555,
+    "llm_used": true,
+    "model": "openrouter/free",
+    "duration_sec": 37.32
+  },
+  {
+    "timestamp": "2026-03-27T19:31:12.942216",
+    "files": [
+      "Sample_Abstract.docx"
+    ],
+    "char_count": 2560,
+    "llm_used": true,
+    "model": "openrouter/free",
+    "duration_sec": 7.2
+  },
+  {
+    "timestamp": "2026-03-27T19:40:22.676998",
+    "files": [
+      "Sample_Abstract.docx"
+    ],
+    "char_count": 1844,
+    "llm_used": true,
+    "model": "google/gemini-2.0-flash-exp:free",
+    "duration_sec": 3.2
+  },
+  {
+    "timestamp": "2026-03-27T19:41:31.984468",
+    "files": [
+      "Sample_Abstract.docx"
+    ],
+    "char_count": 4028,
+    "llm_used": true,
+    "model": "openrouter/free",
+    "duration_sec": 13.69
+  },
+  {
+    "timestamp": "2026-03-27T19:50:30.720246",
+    "files": [
+      "resume.pdf"
+    ],
+    "char_count": 2205,
+    "llm_used": true,
+    "model": "openrouter/free",
+    "duration_sec": 13.29
+  }
+]
