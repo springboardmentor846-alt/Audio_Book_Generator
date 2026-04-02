@@ -1,0 +1,73 @@
+# -----------------------------
+# Python
+# -----------------------------
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual Environment
+venv/
+env/
+ENV/
+.venv/
+
+# -----------------------------
+# Environment Variables
+# -----------------------------
+.env
+*.env
+
+# -----------------------------
+# Streamlit
+# -----------------------------
+.streamlit/secrets.toml
+
+# -----------------------------
+# Temporary Files
+# -----------------------------
+*.log
+*.tmp
+*.temp
+
+# -----------------------------
+# OS Files
+# -----------------------------
+.DS_Store
+Thumbs.db
+
+# -----------------------------
+# IDE / Editor
+# -----------------------------
+.vscode/
+.idea/
+
+# -----------------------------
+# Generated Audio Files
+# -----------------------------
+*.mp3
+
+# -----------------------------
+# PDF/Image Processing Temp Files
+# -----------------------------
+*.png
+*.jpg
+*.jpeg
+
+# -----------------------------
+# Jupyter Notebook
+# -----------------------------
+.ipynb_checkpoints/
+
+# -----------------------------
+# Build / Distribution
+# -----------------------------
+build/
+dist/
+*.egg-info/
+
+# -----------------------------
+# Tesseract / Poppler (Local paths)
+# -----------------------------
+# Ignore if stored locally in project
+poppler/
+tesseract/
