@@ -21,6 +21,7 @@ def generate_avatar_video(audio_file):
         "--driven_audio", f"../{audio_file}",
         "--source_image", "../avatar.jpg",
         "--result_dir", "results"
+        "--still"
     ]
 
     subprocess.run(command, cwd=sadtalker_path)

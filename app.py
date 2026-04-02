@@ -4,80 +4,162 @@ from modules.llm_processor import rewrite_text_for_audiobook
 from modules.tts_engine import text_to_speech
 from modules.avatar_video import generate_avatar_video
 
-st.title("AI Audiobook Generator")
-
-uploaded_file = st.file_uploader(
-    "Upload Document",
-    type=["pdf", "docx", "txt"]
+# -------------------- HEADER --------------------
+st.markdown(
+    "<h1 style='text-align: center; color: #4CAF50;'>🎧 AI Audiobook Generator</h1>",
+    unsafe_allow_html=True
 )
+
+st.divider()
+
+# -------------------- TOP LAYOUT --------------------
+col1, col2 = st.columns(2)
+
+with col1:
+    uploaded_file = st.file_uploader(
+        "📂 Upload Document",
+        type=["pdf", "docx", "txt"]
+    )
+
+with col2:
+    st.markdown("### 📘 Instructions")
+    st.write("""
+    1. Upload your document  
+    2. Choose voice settings  
+    3. Generate audiobook 🎧  
+    4. Create talking avatar 🎬  
+    """)
+
+# -------------------- SIDEBAR --------------------
+with st.sidebar:
+    st.header("⚙ Voice Settings")
+
+    voice_gender = "Female"
+
+    speed = st.selectbox(
+        "Narration Speed",
+        ["Slow", "Normal", "Fast"]
+    )
+
+    tone = st.selectbox(
+        "Narration Tone",
+        ["Storytelling", "Formal", "Emotional"]
+    )
+
+# -------------------- TEXT EXTRACTION --------------------
+text = None
 
 if uploaded_file:
-    st.info("📄 Extracting text...")
-    text = extract_text(uploaded_file, uploaded_file.name)
+    try:
+        st.info("📄 Extracting text...")
+        text = extract_text(uploaded_file, uploaded_file.name)
 
-    st.success("Text Extracted ✅")
-    st.text_area("Extracted Text", text, height=300)
+        if not text or len(text.strip()) == 0:
+            st.error("❌ No text extracted.")
+            st.stop()
 
-st.subheader("🎛 Voice Settings")
+        st.success("✅ Text Extracted")
 
-voice_gender = st.selectbox(
-    "Select Voice",
-    ["Female", "Male"]
-)
+        with st.expander("📄 View Extracted Text"):
+            st.text_area("", text, height=300)
 
-speed = st.selectbox(
-    "Narration Speed",
-    ["Slow", "Normal", "Fast"]
-)
+    except Exception as e:
+        st.error("🚨 Extraction Error")
+        st.code(str(e))
+        st.stop()
+else:
+    st.warning("⚠ Please upload a file first.")
+    st.stop()
 
-tone = st.selectbox(
-    "Narration Tone",
-    ["Storytelling", "Formal", "Emotional"]
-)    
+st.divider()
 
-if uploaded_file:
+# -------------------- BUTTONS --------------------
+col1, col2 = st.columns(2)
 
-    if st.button("Rewrite with AI and Generate Audiobook 🎧"):
+with col1:
+    generate_audio = st.button("🎧 Generate Audiobook")
 
-        status = st.status("Rewriting with AI...", expanded=True)
-        with status: 
-            new_text = rewrite_text_for_audiobook(text, tone) 
-            status.update(label="✅ AI rewriting completed!", state="complete")
+with col2:
+    generate_video = st.button("🎬 Generate Avatar")
 
-        st.text_area("Audiobook Style Text", new_text, height=300)
+# -------------------- AUDIO GENERATION --------------------
+if generate_audio:
+    try:
+        progress = st.progress(0)
 
-        status = st.status("Generating Audiobook 🎧...", expanded=True)
-        with status: 
-            audio_file = text_to_speech(new_text, voice_gender, speed)
-            st.session_state.audio_file = audio_file   # STORE HERE
-            status.update(label="🎧 Audiobook generated successfully!", state="complete")
+        progress.progress(20)
+        new_text = rewrite_text_for_audiobook(text, tone)
 
-        st.audio(audio_file) 
+        if not new_text:
+            st.error("❌ AI rewrite failed.")
+            st.stop()
 
-        with open(audio_file, "rb") as f:
-            st.download_button(
-                "Download Audiobook",
-                f,
-                file_name="audiobook.mp3"
-            ) 
+        with st.expander("🤖 View AI Text"):
+            st.text_area("", new_text, height=300)
 
-    # SECOND BUTTON
-    if st.button("Generate Talking Avatar 🎬"):
+        progress.progress(60)
+        audio_file = text_to_speech(new_text, voice_gender, speed)
 
-        # ✅ Check if audio exists
+        if not audio_file:
+            st.error("❌ Audio generation failed.")
+            st.stop()
+
+        # ✅ STORE AUDIO
+        st.session_state.audio_file = audio_file
+
+        progress.progress(100)
+        st.success("🎉 Audiobook ready!")
+
+    except Exception as e:
+        st.error("🚨 Audio Error")
+        st.code(str(e))
+
+# -------------------- VIDEO GENERATION --------------------
+if generate_video:
+    try:
         if "audio_file" not in st.session_state:
-            st.error("⚠️ Please generate audiobook first!")
-        else:
-            status = st.status("Generating talking avatar...", expanded=True)
-            with status:
-                video_file = generate_avatar_video(st.session_state.audio_file)
-                status.update(label="🎬 Avatar video ready!", state="complete")
+            st.error("⚠ Generate audiobook first!")
+            st.stop()
 
-            st.video(video_file)
+        st.image("avatar.jpg", caption="🎭 Avatar Preview", width=200)
 
-            with open(video_file, "rb") as f:
-                st.download_button(
-                    "Download Video",
-                    f,
-                    file_name="avatar_video.mp4"
-                )
+        video_file = generate_avatar_video(st.session_state.audio_file)
+
+        if not video_file:
+            st.error("❌ Video generation failed.")
+            st.stop()
+
+        # ✅ STORE VIDEO
+        st.session_state.video_file = video_file
+
+        st.success("🎬 Avatar ready!")
+
+    except Exception as e:
+        st.error("🚨 Video Error")
+        st.code(str(e))
+
+# -------------------- DISPLAY AUDIO --------------------
+if "audio_file" in st.session_state:
+    st.subheader("🎧 Your Audiobook")
+
+    st.audio(st.session_state.audio_file)
+
+    with open(st.session_state.audio_file, "rb") as f:
+        st.download_button(
+            "⬇ Download Audio",
+            f,
+            file_name="audiobook.mp3"
+        )
+
+# -------------------- DISPLAY VIDEO --------------------
+if "video_file" in st.session_state:
+    st.subheader("🎬 Your Avatar Video")
+
+    st.video(st.session_state.video_file)
+
+    with open(st.session_state.video_file, "rb") as f:
+        st.download_button(
+            "⬇ Download Video",
+            f,
+            file_name="avatar_video.mp4"
+        )
