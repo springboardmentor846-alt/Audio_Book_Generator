@@ -47,6 +47,10 @@ def enhance_text_for_audio(text: str, tone_style: str) -> str:
     if not text:
         return ""
 
+    if client is None:
+        st.warning("⚠️ GROQ API client not configured; using unmodified text for audio narration.")
+        return clean_text(text)
+
     chunks = split_text(text, chunk_size=2500)
     final_text = ""
 
@@ -138,6 +142,15 @@ def convert_to_language(text: str, target_language: str) -> str:
     """
     if not text:
         return text
+
+    if client is None:
+        if target_language == "English":
+            return clean_text(text)
+
+        st.warning(
+            "⚠️ GROQ API client not configured; skipping translation and using the original text instead."
+        )
+        return clean_text(text)
 
     target_language = target_language or "English"
 

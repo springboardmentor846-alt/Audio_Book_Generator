@@ -158,14 +158,14 @@ async def edge_text_to_audio_natural(
     return output_file
 
 
-def generate_audio_file(text: str, voice: str) -> str | None:
+def generate_audio_file(text: str, voice: str, rate: str = TTS_RATE, pitch: str = TTS_PITCH) -> str | None:
     """
     Public entrypoint for the app:
     - Accepts full narration text (may contain bracketed sound cues),
     - Returns path to the final mixed MP3 file.
     """
     try:
-        return asyncio.run(edge_text_to_audio_natural(text, voice))
+        return asyncio.run(edge_text_to_audio_natural(text, voice, rate, pitch))
     except Exception as e:  
         st.error(f"Error generating audio: {str(e)}")
         return None

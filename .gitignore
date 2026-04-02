@@ -3,3 +3,8 @@ __pycache__/
 *.mp3
 *.pdf
 .streamlit/secrets.toml
+saved_audiobooks/
+_snapshot_*/
+.streamlit/*.log
+.env
+.*txt

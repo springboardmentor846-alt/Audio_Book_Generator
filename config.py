@@ -23,12 +23,12 @@ def _load_groq_api_key() -> str:
         api_key = os.environ.get("GROQ_API_KEY", "")
 
     if not api_key:
-        st.error("❌ GROQ_API_KEY not found!")
+        st.warning("⚠️ GROQ_API_KEY not found - text-enhancing AI features are disabled.")
         st.markdown(
             """
 **Please add your Groq API key in one of these ways:**
 
-1. **Create/Edit `.streamlit/secrets.toml` file** (next to `Audiobook.py`):
+1. **Create/Edit `.streamlit/secrets.toml` file** (next to `audiobook.py`):
    ```toml
    GROQ_API_KEY = "your_api_key_here"
    ```
@@ -49,17 +49,25 @@ def _load_groq_api_key() -> str:
 Get your free API key from: https://console.groq.com/
 """
         )
-        st.stop()
+        # Continue running with reduced functionality
+        return ""
 
     return api_key
 
 
-def create_groq_client() -> Groq:
-    """Create and return a configured Groq client."""
+def create_groq_client() -> "Groq | None":
+    """Create and return a configured Groq client (or None if unavailable)."""
     api_key = _load_groq_api_key()
-    return Groq(api_key=api_key)
+    if not api_key:
+        return None
+    try:
+        return Groq(api_key=api_key)
+    except Exception as e:
+        st.warning(f"⚠️ Failed to initialize Groq client: {e}")
+        return None
 
 
 # Shared Groq client instance for the app
-client: Groq = create_groq_client()
+client = create_groq_client()  # type: ignore[var-annotated]
+
 
