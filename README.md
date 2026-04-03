@@ -1,4 +1,5 @@
 # 🎧 AI Audiobook & Study Assistant
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 An intelligent system that converts documents into audiobooks and interactive study material — built with a focus on **learning, retention, and usability**.
 
