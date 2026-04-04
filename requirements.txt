@@ -2,5 +2,5 @@ streamlit
 PyPDF2
 pdfplumber
 python-docx
-pyttsx3
-openai
+gTTS
+requests
