@@ -41,7 +41,7 @@ User Input → AI Rewrite → Audio Generation → Avatar Video
 ### 🔹 1. Clone the Repository
 
 ```bash
-git clone <your-repo-link>
+git clone <https://github.com/springboardmentor846-alt/Audio_Book_Generator/edit/Mohit>
 cd Audio_Book_Generator
 ```
 
@@ -101,18 +101,34 @@ Required files:
 ```bash
 streamlit run app.py
 ```
+⏱ SadTalker Performance
+| System Type        | Approx Time |
+| ------------------ | ----------- |
+| 💻 4GB RAM (i3)    | 25–40 min   |
+| 💻 8GB RAM (i5)    | 10–25 min   |
+| 💻 16GB RAM (i7)   | 5–12 min    |
+| 🚀 GPU (Colab/RTX) | 1–3 min     |
 
 ---
 
 ## 📂 Project Structure
 
 ```text
-Audio_Book_Generator
+audiobook-generator/
+│
 ├── app.py
 ├── modules/
-├── requirements.txt
+│   ├── text_extractor.py
+│   ├── llm_processor.py
+│   ├── tts_engine.py
+│   ├── avatar_video.py
+│
+├── SadTalker/
+│   ├── checkpoints/
+│   ├── results/
+│
 ├── avatar.jpg
-├── README.md
+├── requirements.txt
 ```
 
 ---
@@ -135,6 +151,18 @@ Audio_Book_Generator
 
 ---
 
+🚨 Known Limitations
+Slow video generation on CPU
+gTTS lacks real voice variety
+Requires refresh for long-running tasks
+---
+🚀 Future Improvements
+Real human voices (Edge TTS)
+Faster GPU-based inference
+Auto-refresh UI for video completion
+Multiple avatar support
+Cloud deployment
+---
 ## 🙌 Author
 
 **Mohit**
