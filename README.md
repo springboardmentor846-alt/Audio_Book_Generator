@@ -151,18 +151,18 @@ audiobook-generator/
 
 ---
 
-🚨 Known Limitations
-Slow video generation on CPU
-gTTS lacks real voice variety
-Requires refresh for long-running tasks
----
-🚀 Future Improvements
-Real human voices (Edge TTS)
-Faster GPU-based inference
-Auto-refresh UI for video completion
-Multiple avatar support
-Cloud deployment
----
+## 🚨 Known Limitations
+* Slow video generation on CPU
+* gTTS lacks real voice variety
+* Requires refresh for long-running tasks
+
+## 🚀 Future Improvements
+* Real human voices (Edge TTS)
+* Faster GPU-based inference
+* Auto-refresh UI for video completion
+* Multiple avatar support
+* Cloud deployment
+
 ## 🙌 Author
 
 **Mohit**
